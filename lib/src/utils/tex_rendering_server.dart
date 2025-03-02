@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_tex/src/models/rendering_engine.dart';
 import 'package:webview_flutter_plus/webview_flutter_plus.dart';
-
-
 
 /// A rendering server for TeXView. This is backed by a [LocalhostServer] and a [WebViewControllerPlus].
 /// Make sure to call [run] before using the [controller].
@@ -23,15 +23,41 @@ class TeXRederingServer {
     await server.start(port: port);
   }
 
-  static Future<void> initController() async {
+  static Future<String> generateHTML(
+      String customHeadContent, int port, String renderingEngineName) async {
+    // Read the original HTML file from assets.
+    String htmlContent = await rootBundle
+        .loadString("packages/flutter_tex/js/$renderingEngineName/index.html");
+
+    // Set the base URL so relative paths resolve correctly.
+    // If index.html is in .../js/mathjax/, the base href should be that folder.
+    String baseUrl =
+        "http://localhost:$port/packages/flutter_tex/js/$renderingEngineName/";
+    String baseTag = '<base href="$baseUrl">';
+
+    // Inject the base tag and custom head content right after <head>
+    htmlContent = htmlContent.replaceFirst(
+        "<head>", "<head>\n$baseTag\n$customHeadContent\n");
+
+    return htmlContent;
+  }
+
+  static Future<void> initController({String customHeadContent = ''}) async {
     var controllerCompleter = Completer<void>();
+
+    String customHTML = await generateHTML(
+        customHeadContent, server.port!, renderingEngine.name);
 
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
-      ..loadFlutterAssetWithServer(
-          "packages/flutter_tex/js/${renderingEngine.name}/index.html",
-          server.port!)
+      ..loadRequest(
+        Uri.dataFromString(
+          customHTML,
+          mimeType: 'text/html',
+          encoding: Encoding.getByName('utf-8'),
+        ),
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
