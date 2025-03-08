@@ -1,4 +1,4 @@
-library;
+library flutter_tex;
 
 export 'package:flutter_tex/src/models/font.dart';
 export 'package:flutter_tex/src/models/rendering_engine.dart';
@@ -22,3 +22,9 @@ export 'package:flutter_tex/src/widgets/video.dart';
 export 'package:flutter_tex/src/widgets/widget.dart';
 export 'package:flutter_tex/src/widgets/details.dart';
 export 'package:flutter_tex/src/utils/tex_rendering_server.dart';
+
+// Export new carousel components
+export 'package:flutter_tex/src/controller/tex_view_controller.dart';
+export 'package:flutter_tex/src/controller/tex_view_controller_pool.dart';
+export 'package:flutter_tex/src/views/tex_view_carousel.dart';
+export 'package:flutter_tex/src/widgets/composite.dart';

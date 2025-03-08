@@ -8,6 +8,8 @@ import 'package:flutter_tex_example/tex_view_ink_well_example.dart';
 import 'package:flutter_tex_example/tex_view_markdown_example.dart';
 import 'package:flutter_tex_example/tex_view_quiz_example.dart';
 
+import 'tex_view_carousel_example.dart';
+
 main() async {
   WidgetsFlutterBinding.ensureInitialized();
   TeXRederingServer.renderingEngine = const TeXViewRenderingEngine.mathjax();
@@ -136,20 +138,54 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            Flexible(
-              child: TeXView(
-                child: _currentTeXViewDocument,
-                onRenderFinished: (height) {
-                  if (kDebugMode) {
-                    print("TeXView rendered with height: $height");
-                  }
-                },
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // TeXView example
+              SizedBox(
+                height: 500,
+                child: TeXView(
+                  child: _currentTeXViewDocument,
+                  onRenderFinished: (height) {
+                    if (kDebugMode) {
+                      print("TeXView rendered with height: $height");
+                    }
+                  },
+                ),
               ),
-            ),
-            Text("--- TeX View ends here ---")
-          ],
+              const Divider(),
+              // Button to open carousel example
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TeXViewCarouselExample(),
+                      ),
+                    );
+                  },
+                  child: const Text('Open TeXView Carousel Example'),
+                ),
+              ),
+              // Rest of the example buttons
+              Column(
+                children: [
+                  getExampleButton(context, "TeXView Document Examples",
+                      const TeXViewDocumentExamples()),
+                  getExampleButton(context, "TeXView Quiz Examples",
+                      const TeXViewQuizExample()),
+                  getExampleButton(context, "TeXView Markdown Examples",
+                      const TeXViewMarkdownExamples()),
+                  getExampleButton(context, "TeXView Ink Well Examples",
+                      const TeXViewInkWellExample()),
+                  getExampleButton(context, "TeXView Image & Video Examples",
+                      const TeXViewImageVideoExample()),
+                ],
+              ),
+            ],
+          ),
         ));
   }
 
