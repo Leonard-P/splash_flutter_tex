@@ -9,7 +9,14 @@ class TeXViewDocument extends TeXViewWidget {
   /// Style TeXView Widget with [TeXViewStyle].
   final TeXViewStyle? style;
 
-  const TeXViewDocument(this.data, {this.style});
+  /// Whether to automatically adjust height when resources (images, etc.) load
+  final bool autoResizeOnResourceLoad;
+
+  const TeXViewDocument(
+    this.data, {
+    this.style,
+    this.autoResizeOnResourceLoad = true,
+  });
 
   @override
   TeXViewWidgetMeta meta() {
@@ -22,5 +29,6 @@ class TeXViewDocument extends TeXViewWidget {
         'meta': meta().toJson(),
         'data': data,
         'style': style?.initStyle() ?? teXViewDefaultStyle,
+        'autoResizeOnResourceLoad': autoResizeOnResourceLoad,
       };
 }

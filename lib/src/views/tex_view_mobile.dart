@@ -8,6 +8,7 @@ class TeXViewState extends State<TeXView> {
 
   double _currentHeight = initialHeight;
   String _lastRawData = "";
+  bool _initialRenderComplete = false;
 
   @override
   void initState() {
@@ -15,9 +16,10 @@ class TeXViewState extends State<TeXView> {
         (teXViewRenderedCallbackMessage) {
       double newHeight = double.parse(teXViewRenderedCallbackMessage);
 
-      if (_currentHeight != newHeight && mounted) {
+      if ((_currentHeight != newHeight || !_initialRenderComplete) && mounted) {
         setState(() {
           _currentHeight = newHeight;
+          _initialRenderComplete = true;
         });
         widget.onRenderFinished?.call(_currentHeight);
       }
@@ -34,7 +36,7 @@ class TeXViewState extends State<TeXView> {
     _renderTeXView();
     return IndexedStack(
       index: widget.loadingWidgetBuilder?.call(context) != null
-          ? _currentHeight == initialHeight
+          ? !_initialRenderComplete
               ? 1
               : 0
           : 0,
@@ -53,7 +55,12 @@ class TeXViewState extends State<TeXView> {
   void _renderTeXView() async {
     var currentRawData = getRawData(widget);
     if (currentRawData != _lastRawData) {
-      if (widget.loadingWidgetBuilder != null) _currentHeight = initialHeight;
+      if (widget.loadingWidgetBuilder != null) {
+        setState(() {
+          _initialRenderComplete = false;
+          _currentHeight = initialHeight;
+        });
+      }
       await _controller.runJavaScript("initView($currentRawData)");
       _lastRawData = currentRawData;
     }

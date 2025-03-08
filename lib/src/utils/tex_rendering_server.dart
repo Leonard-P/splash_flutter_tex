@@ -37,7 +37,6 @@ class TeXRederingServer {
         .loadString("packages/flutter_tex/js/$renderingEngineName/index.html");
 
     // Set the base URL so relative paths resolve correctly.
-    // If index.html is in .../js/mathjax/, the base href should be that folder.
     String baseUrl =
         "http://localhost:$port/packages/flutter_tex/js/$renderingEngineName/";
     String baseTag = '<base href="$baseUrl">';
@@ -46,9 +45,127 @@ class TeXRederingServer {
     String customHeadWrapper =
         '<div id="$_customHeadContainerId" style="display:none;">$customHeadContent</div>';
 
-    // Inject the base tag and custom head content right after <head>
-    htmlContent = htmlContent.replaceFirst(
-        "<head>", "<head>\n$baseTag\n$customHeadWrapper\n");
+    // Add resource loading monitoring script
+    String resourceMonitoringScript = '''
+    <script>
+      // Track resource loading for height adjustment
+      window.TeXViewResourceMonitor = {
+        pendingResources: 0,
+        
+        // Register a new resource to be monitored
+        registerResource: function() {
+          this.pendingResources++;
+          return this.pendingResources;
+        },
+        
+        // Resource finished loading, update height if needed
+        resourceLoaded: function() {
+          this.pendingResources--;
+          if (this.pendingResources <= 0) {
+            // All resources loaded, update height
+            this.updateHeight();
+          }
+        },
+        
+        // Update the TeXView height
+        updateHeight: function() {
+          if (typeof updateTeXViewHeight === 'function') {
+            updateTeXViewHeight();
+          }
+        },
+        
+        // Process the entire DOM to add monitoring to existing resources
+        observeExistingResources: function() {
+          const images = document.querySelectorAll('img:not([data-texview-monitored])');
+          const iframes = document.querySelectorAll('iframe:not([data-texview-monitored])');
+          const videos = document.querySelectorAll('video:not([data-texview-monitored])');
+          
+          // Monitor images
+          images.forEach(img => {
+            img.setAttribute('data-texview-monitored', 'true');
+            if (!img.complete) {
+              const resourceId = this.registerResource();
+              img.addEventListener('load', () => {
+                this.resourceLoaded();
+              });
+              img.addEventListener('error', () => {
+                this.resourceLoaded();
+              });
+            }
+          });
+          
+          // Monitor iframes
+          iframes.forEach(iframe => {
+            iframe.setAttribute('data-texview-monitored', 'true');
+            const resourceId = this.registerResource();
+            iframe.addEventListener('load', () => {
+              this.resourceLoaded();
+            });
+          });
+          
+          // Monitor videos
+          videos.forEach(video => {
+            video.setAttribute('data-texview-monitored', 'true');
+            if (video.readyState < 1) { // HAVE_NOTHING
+              const resourceId = this.registerResource();
+              video.addEventListener('loadedmetadata', () => {
+                this.resourceLoaded();
+              });
+              video.addEventListener('error', () => {
+                this.resourceLoaded();
+              });
+            }
+          });
+        }
+      };
+      
+      // Override the existing updateTeXViewHeight function to also check resources
+      const originalUpdateTeXViewHeight = window.updateTeXViewHeight || function() {};
+      window.updateTeXViewHeight = function() {
+        originalUpdateTeXViewHeight();
+        
+        // Ensure we're monitoring all resources
+        window.TeXViewResourceMonitor.observeExistingResources();
+        
+        // Get height after resources are loaded
+        const height = document.getElementById("tex-view-render-container").offsetHeight;
+        window.flutter_inappwebview.callHandler('TeXViewRenderedCallback', height);
+      };
+      
+      // Observe mutations to detect newly added resources
+      const observeDOMChanges = () => {
+        const observer = new MutationObserver((mutations) => {
+          let hasNewContent = false;
+          
+          mutations.forEach(mutation => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+              hasNewContent = true;
+            }
+          });
+          
+          if (hasNewContent) {
+            // New content was added, check for new resources
+            window.TeXViewResourceMonitor.observeExistingResources();
+          }
+        });
+        
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      };
+      
+      // Initialize monitoring when the document is ready
+      document.addEventListener('DOMContentLoaded', () => {
+        window.TeXViewResourceMonitor.observeExistingResources();
+        observeDOMChanges();
+      });
+    </script>
+    ''';
+
+    // Inject the base tag, custom head content and resource monitoring script right after <head>
+    htmlContent = htmlContent.replaceFirst("<head>",
+        "<head>\n$baseTag\n$customHeadWrapper\n$resourceMonitoringScript\n");
 
     _currentCustomHeadContent = customHeadContent;
     return htmlContent;

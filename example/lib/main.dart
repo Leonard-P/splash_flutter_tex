@@ -127,13 +127,43 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
                 });
               },
             ),
+            // Add a button to test loading images
+            IconButton(
+              icon: const Icon(Icons.image),
+              onPressed: () {
+                _addImage();
+              },
+            ),
           ],
         ),
-        // Fix: Replace Flexible with a widget container that doesn't require a specific parent
         body: Column(
           children: [
             Flexible(
-              child: TeXView(child: TeXViewDocument("""<body>
+              child: TeXView(
+                child: _currentTeXViewDocument,
+                onRenderFinished: (height) {
+                  if (kDebugMode) {
+                    print("TeXView rendered with height: $height");
+                  }
+                },
+              ),
+            ),
+            Text("--- TeX View ends here ---")
+          ],
+        ));
+  }
+
+  // Current TeXView document
+  TeXViewDocument get _currentTeXViewDocument => TeXViewDocument(
+        _includeImages ? _contentWithImages : _contentWithoutImages,
+        autoResizeOnResourceLoad: true,
+      );
+
+  // Flag to toggle image content
+  bool _includeImages = false;
+
+  // Content without images
+  final String _contentWithoutImages = """<body>
   <h2>Interactive Weight Balance</h2>
   
   <div class="slider-container">
@@ -156,11 +186,42 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
       </div>
   </div>
 </body>
+  """;
 
-        """)),
-            ),
-          ],
-        ));
+  // Content with images that will trigger height adjustment
+  final String _contentWithImages = """<body>
+  <h2>Interactive Weight Balance with Images</h2>
+  
+  <div class="slider-container">
+      <label>
+        Left Weight: 
+        <input type="range" id="leftWeight" min="0" max="10" step="1" value="5" oninput="updateBalance()">
+      </label>
+      <br>
+      <label>
+        Right Weight: 
+        <input type="range" id="rightWeight" min="0" max="10" step="1" value="5" oninput="updateBalance()">
+      </label>
+  </div>
+  
+  <div class="balance-container">
+      <div class="scale">
+          <div class="left-weight"></div>
+          <div class="right-weight"></div>
+          <div class="pivot"></div>
+      </div>
+  </div>
+  
+  <h3>Images will trigger automatic height adjustment</h3>
+  <a data-flickr-embed="true" href="https://www.flickr.com/photos/186236561@N02/54364893402/in/pool-veryverylargephotos/" title="coast scene"><img src="https://live.staticflickr.com/65535/54364893402_3b8c9e560e_6k.jpg" width="400" alt="coast scene"/></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
+  </body>
+  """;
+
+  // Toggle between content with and without images
+  void _addImage() {
+    setState(() {
+      _includeImages = !_includeImages;
+    });
   }
 
   // Method to update the theme by changing the injected CSS
