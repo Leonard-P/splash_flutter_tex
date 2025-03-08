@@ -216,15 +216,21 @@ class DualTeXViewController {
 
 /// A carousel widget that efficiently displays multiple TeXViews in a PageView
 class TeXViewCarousel extends StatefulWidget {
-  /// List of items to display in the carousel
+  /// Total number of items in the carousel
+  final int itemCount;
+
+  /// Builder function that returns an item for a given index
   /// Note: Items can be either TeXViewDocument, TeXViewComposite, or any other widget
-  final List<dynamic> items;
+  final dynamic Function(BuildContext context, int index) itemBuilder;
 
   /// Custom PageController
   final PageController? controller;
 
   /// Style for TeXViews
   final TeXViewStyle? style;
+
+  /// Optional padding to apply around the TeXView content
+  final EdgeInsetsGeometry? padding;
 
   /// Custom head content for TeXViews
   final String customHeadContent;
@@ -241,14 +247,42 @@ class TeXViewCarousel extends StatefulWidget {
   /// Create a new TeXViewCarousel
   const TeXViewCarousel({
     super.key,
-    required this.items,
+    required this.itemCount,
+    required this.itemBuilder,
     this.controller,
     this.style,
+    this.padding,
     this.customHeadContent = '',
     this.onPageChanged,
     this.onRenderFinished,
     this.loadingWidgetBuilder,
   });
+
+  /// Factory constructor that accepts a list of items instead of an itemBuilder
+  factory TeXViewCarousel.fromItems({
+    Key? key,
+    required List<dynamic> items,
+    PageController? controller,
+    TeXViewStyle? style,
+    EdgeInsetsGeometry? padding,
+    String customHeadContent = '',
+    Function(int)? onPageChanged,
+    Function(int, double)? onRenderFinished,
+    Widget Function(BuildContext)? loadingWidgetBuilder,
+  }) {
+    return TeXViewCarousel(
+      key: key,
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
+      controller: controller,
+      style: style,
+      padding: padding,
+      customHeadContent: customHeadContent,
+      onPageChanged: onPageChanged,
+      onRenderFinished: onRenderFinished,
+      loadingWidgetBuilder: loadingWidgetBuilder,
+    );
+  }
 
   @override
   State<TeXViewCarousel> createState() => _TeXViewCarouselState();
@@ -336,10 +370,11 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
 
   /// Identify which items are TeXView documents or composites
   void _identifyTeXViewItems() {
-    for (int i = 0; i < widget.items.length; i++) {
-      if (widget.items[i] is TeXViewDocument) {
+    for (int i = 0; i < widget.itemCount; i++) {
+      final item = widget.itemBuilder(context, i);
+      if (item is TeXViewDocument) {
         _texViewTypes[i] = _TeXViewType.document;
-      } else if (widget.items[i] is TeXViewComposite) {
+      } else if (item is TeXViewComposite) {
         _texViewTypes[i] = _TeXViewType.composite;
       } else {
         _texViewTypes[i] = _TeXViewType.none;
@@ -380,10 +415,10 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
 
   /// Check if there's a next page that requires a TeXView controller
   int? _getNextTeXPageIndex(int fromIndex) {
-    if (fromIndex >= widget.items.length) return null;
+    if (fromIndex >= widget.itemCount) return null;
 
     // Check if any of the next pages is a TeXView page
-    for (int i = fromIndex; i < widget.items.length; i++) {
+    for (int i = fromIndex; i < widget.itemCount; i++) {
       if (_texViewTypes[i] != _TeXViewType.none) return i;
     }
     return null;
@@ -393,7 +428,7 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
   Future<void> _preparePageIfNeeded(int pageIndex) async {
     // Skip if not a TeXView page or out of bounds
     if (pageIndex < 0 ||
-        pageIndex >= widget.items.length ||
+        pageIndex >= widget.itemCount ||
         _texViewTypes[pageIndex] == _TeXViewType.none) {
       return;
     }
@@ -408,8 +443,8 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
       final controller =
           await _dualController.preloadController(pageIndex, _currentPageIndex);
       if (controller != null && mounted) {
-        await _dualController.renderContent(
-            pageIndex, widget.items[pageIndex], widget.style);
+        final item = widget.itemBuilder(context, pageIndex);
+        await _dualController.renderContent(pageIndex, item, widget.style);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -505,8 +540,8 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
 
         // Re-render content if this is a page we just moved to
         if (pageIndex == _currentPageIndex) {
-          await _dualController.renderContent(
-              pageIndex, widget.items[pageIndex], widget.style);
+          final item = widget.itemBuilder(context, pageIndex);
+          await _dualController.renderContent(pageIndex, item, widget.style);
           pagesNeedingUpdate.add(pageIndex);
         }
       }
@@ -547,27 +582,28 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
   Widget build(BuildContext context) {
     return PageView.builder(
       controller: _pageController,
-      itemCount: widget.items.length,
+      itemCount: widget.itemCount,
       onPageChanged: _onPageChanged,
       itemBuilder: (context, index) {
         final texViewType = _texViewTypes[index] ?? _TeXViewType.none;
+        final item = widget.itemBuilder(context, index);
 
         if (texViewType == _TeXViewType.none) {
           // Return the regular widget if it's not a TeXViewDocument or composite
-          return widget.items[index];
+          return item;
         } else if (texViewType == _TeXViewType.document) {
           // It's a standard TeXViewDocument, return a TeXView
-          return _buildTeXView(index);
+          return _buildTeXView(index, item);
         } else {
           // It's a composite, we need to combine TeXView with Flutter widgets
-          return _buildCompositeView(index);
+          return _buildCompositeView(index, item as TeXViewComposite);
         }
       },
     );
   }
 
   /// Build a standard TeXView
-  Widget _buildTeXView(int index) {
+  Widget _buildTeXView(int index, dynamic item) {
     // Get the controller for this page
     final controller = _dualController.getControllerForPage(index);
     final isCurrentPage = index == _currentPageIndex;
@@ -584,11 +620,7 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
     final height = _heights[index] ?? initialHeight;
     final isLoading = !controller.isInitialized;
 
-    if (kDebugMode && index != _currentPageIndex) {
-      print('Building non-current TeX page $index');
-    }
-
-    return SizedBox(
+    Widget texView = SizedBox(
       height: height,
       child: Stack(
         children: [
@@ -612,12 +644,20 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
         ],
       ),
     );
+
+    // Apply padding if specified
+    if (widget.padding != null) {
+      texView = Padding(
+        padding: widget.padding!,
+        child: texView,
+      );
+    }
+
+    return texView;
   }
 
   /// Build a composite view with TeXView and Flutter widgets
-  Widget _buildCompositeView(int index) {
-    final composite = widget.items[index] as TeXViewComposite;
-
+  Widget _buildCompositeView(int index, TeXViewComposite composite) {
     // Get the controller for this page
     final controller = _dualController.getControllerForPage(index);
     final isCurrentPage = index == _currentPageIndex;
@@ -634,6 +674,39 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
     final texHeight = _heights[index] ?? initialHeight;
     final isLoading = !controller.isInitialized;
 
+    Widget texViewContent = SizedBox(
+      height: texHeight,
+      child: Stack(
+        children: [
+          // The WebView - IMPORTANT: Only create for current or preloaded pages
+          if (isCurrentPage || index == _preloadedPageIndex)
+            Visibility(
+              visible: isCurrentPage,
+              maintainState: true,
+              maintainAnimation: true,
+              maintainSize: true,
+              maintainSemantics: true,
+              maintainInteractivity: false,
+              child: WebViewWidget(
+                controller: controller.webViewController,
+              ),
+            ),
+
+          // Loading widget, shown until height is determined
+          if (isLoading && widget.loadingWidgetBuilder != null)
+            widget.loadingWidgetBuilder!(context),
+        ],
+      ),
+    );
+
+    // Apply padding to the TeXView part if specified
+    if (widget.padding != null) {
+      texViewContent = Padding(
+        padding: widget.padding!,
+        child: texViewContent,
+      );
+    }
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -645,30 +718,7 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
           ],
 
           // The TeXView in the middle
-          SizedBox(
-            height: texHeight,
-            child: Stack(
-              children: [
-                // The WebView - IMPORTANT: Only create for current or preloaded pages
-                if (isCurrentPage || index == _preloadedPageIndex)
-                  Visibility(
-                    visible: isCurrentPage,
-                    maintainState: true,
-                    maintainAnimation: true,
-                    maintainSize: true,
-                    maintainSemantics: true,
-                    maintainInteractivity: false,
-                    child: WebViewWidget(
-                      controller: controller.webViewController,
-                    ),
-                  ),
-
-                // Loading widget, shown until height is determined
-                if (isLoading && widget.loadingWidgetBuilder != null)
-                  widget.loadingWidgetBuilder!(context),
-              ],
-            ),
-          ),
+          texViewContent,
 
           // Widget below, if any
           if (composite.below != null) ...[

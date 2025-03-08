@@ -1,5 +1,3 @@
-library flutter_tex;
-
 export 'package:flutter_tex/src/models/font.dart';
 export 'package:flutter_tex/src/models/rendering_engine.dart';
 export 'package:flutter_tex/src/styles/border.dart';
