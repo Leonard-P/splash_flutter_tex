@@ -40,6 +40,9 @@ class TeXRederingServer {
     String baseUrl =
         "http://localhost:$port/packages/flutter_tex/js/$renderingEngineName/";
     String baseTag = '<base href="$baseUrl">';
+    // Add a CSP meta tag to relax CORS restrictions on Android.
+    String cspTag =
+        '<meta http-equiv="Content-Security-Policy" content="default-src * data: blob: \'unsafe-inline\' \'unsafe-eval\';">';
 
     // Create a container div for custom head content with an ID to find it later
     String customHeadWrapper =
@@ -165,7 +168,7 @@ class TeXRederingServer {
 
     // Inject the base tag, custom head content and resource monitoring script right after <head>
     htmlContent = htmlContent.replaceFirst("<head>",
-        "<head>\n$baseTag\n$customHeadWrapper\n$resourceMonitoringScript\n");
+        "<head>\n$baseTag\n$cspTag\n$customHeadWrapper\n$resourceMonitoringScript\n");
 
     _currentCustomHeadContent = customHeadContent;
     return htmlContent;
