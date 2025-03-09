@@ -50,9 +50,6 @@ class _SharedControllerTeXViewState extends State<SharedControllerTeXView> {
       setState(() {
         _controller = controller;
       });
-      if (kDebugMode) {
-        print("got controller!");
-      }
       // Set the onRendered callback to update height.
       _controller!.onTeXViewRenderedCallback = (heightStr) {
         double newHeight = double.tryParse(heightStr) ?? initialHeight;
@@ -92,7 +89,6 @@ class _SharedControllerTeXViewState extends State<SharedControllerTeXView> {
   }
 
   void _renderTeXView() async {
-    print("rendering with controller = $_controller");
     if (_controller == null) return;
     // Get the raw JSON data from the child widget.
     final currentRawData = getSharedTeXViewRawData(widget);

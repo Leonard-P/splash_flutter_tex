@@ -73,9 +73,8 @@ class SharedTexViewControllerPool {
   /// Dispose all controllers and clear the pool.
   /// Call this method when the pool is no longer needed.
   Future<void> dispose() async {
-    for (var controller in _controllers.values) {
-      await controller.dispose();
-    }
+    await Future.wait(
+        _controllers.values.map((controller) => controller.dispose()));
     _controllers.clear();
     _lruList.clear();
   }
