@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tex/src/models/rendering_engine.dart';
 import 'package:webview_flutter_plus/webview_flutter_plus.dart';
 
+import '../views/tex_view_carousel.dart';
+
 /// A controller for a TeXView, wrapping the WebViewControllerPlus and LocalhostServer.
 class TeXViewController {
   /// The WebView controller
@@ -42,9 +44,15 @@ class TeXViewController {
   /// Create a new TeXViewController with a unique ID
   TeXViewController({required this.id});
 
-  /// Initialize the controller
-  Future<void> initialize({String customHeadContent = ''}) async {
-    if (_isInitialized) return;
+  /// Initialize the controller.
+  Future<void> initialize(
+      {String customHeadContent = '', bool waitForPageFinished = true}) async {
+    if (_isInitialized) {
+      if (kDebugMode) {
+        print("Controller already initialized");
+      }
+      return;
+    }
 
     _customHeadContent = customHeadContent;
 
@@ -55,34 +63,31 @@ class TeXViewController {
     String htmlContent = await _generateHTML(
         customHeadContent, server.port!, renderingEngine.name);
 
-    // Initialize the controller
     var controllerCompleter = Completer<void>();
 
     webViewController
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
-      ..loadRequest(
-        Uri.dataFromString(
-          htmlContent,
-          mimeType: 'text/html',
-          encoding: Encoding.getByName('utf-8'),
-        ),
-      )
+      ..loadRequest(Uri.dataFromString(
+        htmlContent,
+        mimeType: 'text/html',
+        encoding: Encoding.getByName('utf-8'),
+      ))
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
             onPageFinished?.call(url);
-            controllerCompleter.complete();
+            if (waitForPageFinished && !controllerCompleter.isCompleted) {
+              controllerCompleter.complete();
+            }
           },
         ),
       )
-      ..setOnConsoleMessage(
-        (message) {
-          if (kDebugMode) {
-            print('[$id] ${message.message}');
-          }
-        },
-      )
+      ..setOnConsoleMessage((message) {
+        if (kDebugMode) {
+          print('[$id] ${message.message}');
+        }
+      })
       ..addJavaScriptChannel(
         'OnTapCallback',
         onMessageReceived: (onTapCallbackMessage) =>
@@ -94,6 +99,14 @@ class TeXViewController {
             onTeXViewRenderedCallback
                 ?.call(teXViewRenderedCallbackMessage.message),
       );
+
+    if (!waitForPageFinished && !controllerCompleter.isCompleted) {
+      // Complete after a short delay so that the pool can continue
+      // Future.delayed(const Duration(milliseconds: 300), () {
+      //   if (!controllerCompleter.isCompleted) controllerCompleter.complete();
+      // });
+      controllerCompleter.complete();
+    }
 
     await controllerCompleter.future;
     _isInitialized = true;
@@ -378,6 +391,36 @@ class TeXViewController {
     ''';
 
     await webViewController.runJavaScript(updateScript);
+  }
+
+  /// Retrieve the current rendered height from the WebView.
+  // Future<double> getCurrentHeight() async {
+  //   if (!_isInitialized) {
+  //     return initialHeight;
+  //   }
+
+  //   try {
+  //     final result = await webViewController.runJavaScriptReturningResult(
+  //         "document.getElementById('tex-view-render-container') ? document.getElementById('tex-view-render-container').offsetHeight : $initialHeight");
+
+  //     // Result might be returned as a number or a string depending on the WebView implementation
+  //     if (result is num) {
+  //       return result.toDouble();
+  //     } else if (result is String) {
+  //       return double.tryParse(result) ?? initialHeight;
+  //     }
+  //     return initialHeight;
+  //   } catch (e) {
+  //     return initialHeight;
+  //   }
+  // }
+
+  /// Force a height recalculation of the current content without re-rendering.
+  Future<void> forceHeightUpdate() async {
+    if (!_isInitialized) return;
+
+    await webViewController.runJavaScript(
+        "if (typeof updateTeXViewHeight === 'function') updateTeXViewHeight();");
   }
 
   /// Mark this controller as active

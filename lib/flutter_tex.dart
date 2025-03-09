@@ -21,8 +21,17 @@ export 'package:flutter_tex/src/widgets/widget.dart';
 export 'package:flutter_tex/src/widgets/details.dart';
 export 'package:flutter_tex/src/utils/tex_rendering_server.dart';
 
+// Controllers
+export 'src/controller/tex_view_controller.dart';
+export 'src/controller/shared_tex_view_controller_pool.dart';
+export 'src/controller/tex_view_controller_provider.dart';
+
+// Views
+// export 'src/views/tex_view_image.dart';
+export 'src/views/tex_view_mobile.dart';
+// export 'src/views/tex_view_web.dart';
+export 'src/views/shared_controller_tex_view.dart';
+
 // Export new carousel components
-export 'package:flutter_tex/src/controller/tex_view_controller.dart';
-export 'package:flutter_tex/src/controller/tex_view_controller_pool.dart';
 export 'package:flutter_tex/src/views/tex_view_carousel.dart';
 export 'package:flutter_tex/src/widgets/composite.dart';

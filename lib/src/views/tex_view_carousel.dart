@@ -6,10 +6,7 @@ import 'package:webview_flutter_plus/webview_flutter_plus.dart';
 
 import '../../flutter_tex.dart';
 import '../models/widget_meta.dart';
-import '../styles/style.dart';
 import '../utils/style_utils.dart';
-import '../widgets/composite.dart';
-import '../widgets/document.dart';
 
 // Default initial height for TeXViews before they report their actual height
 const double initialHeight = 100.0;
@@ -540,6 +537,7 @@ class _TeXViewCarouselState extends State<TeXViewCarousel> {
 
         // Re-render content if this is a page we just moved to
         if (pageIndex == _currentPageIndex) {
+          if (!mounted) return;
           final item = widget.itemBuilder(context, pageIndex);
           await _dualController.renderContent(pageIndex, item, widget.style);
           pagesNeedingUpdate.add(pageIndex);
