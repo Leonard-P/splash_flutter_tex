@@ -55,6 +55,11 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            SharedControllerTeXView(
+                id: "f",
+                child: TeXViewDocument(
+                    "<p style=\"padding: 0\"> Some multiline quesiton that might span multiple lines- or might not öjksfha sölkadfhj aöslkdfj aöslkdfj öaslkdjf aöslkdfj !</p>"),
+                controllerPool: TeXViewControllerProvider.poolOf(context)),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(

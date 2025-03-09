@@ -68,7 +68,7 @@
         }
 
         function renderTeXView(onCompleteCallback) {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, "TeXView"], function () {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, "tex-view-render-container"], function () {
                 onCompleteCallback();
             });
         }
