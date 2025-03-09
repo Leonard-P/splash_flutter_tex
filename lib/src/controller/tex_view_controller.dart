@@ -151,10 +151,10 @@ class TeXViewController {
           }
         },
         
-        // Update the TeXView height
+        // Update the TeXView height using the existing renderCompleted function
         updateHeight: function() {
-          if (typeof updateTeXViewHeight === 'function') {
-            updateTeXViewHeight();
+          if (typeof renderCompleted === 'function') {
+            renderCompleted();
           }
         },
         
@@ -201,19 +201,6 @@ class TeXViewController {
             }
           });
         }
-      };
-      
-      // Override the existing updateTeXViewHeight function to also check resources
-      const originalUpdateTeXViewHeight = window.updateTeXViewHeight || function() {};
-      window.updateTeXViewHeight = function() {
-        originalUpdateTeXViewHeight();
-        
-        // Ensure we're monitoring all resources
-        window.TeXViewResourceMonitor.observeExistingResources();
-        
-        // Get height after resources are loaded
-        const height = document.getElementById("tex-view-render-container").offsetHeight;
-        window.flutter_inappwebview.callHandler('TeXViewRenderedCallback', height);
       };
       
       // Observe mutations to detect newly added resources
@@ -420,7 +407,7 @@ class TeXViewController {
     if (!_isInitialized) return;
 
     await webViewController.runJavaScript(
-        "if (typeof updateTeXViewHeight === 'function') updateTeXViewHeight();");
+        "if (typeof window.TeXViewResourceMonitor === 'object') window.TeXViewResourceMonitor.updateHeight(); else if (typeof renderCompleted === 'function') renderCompleted();");
   }
 
   /// Mark this controller as active
