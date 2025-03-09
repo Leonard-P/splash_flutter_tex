@@ -14,6 +14,7 @@ class SharedControllerTeXView extends StatefulWidget {
   final String id;
   final TeXViewWidget child;
   final TeXViewStyle? style;
+  final double addedHeight;
   final Widget Function(BuildContext context)? loadingWidgetBuilder;
   final SharedTexViewControllerPool controllerPool;
 
@@ -28,6 +29,7 @@ class SharedControllerTeXView extends StatefulWidget {
     this.loadingWidgetBuilder,
     this.onRenderFinished,
     required this.controllerPool,
+    this.addedHeight = 0.0,
   });
 
   @override
@@ -137,7 +139,7 @@ class _SharedControllerTeXViewState extends State<SharedControllerTeXView> {
           : 0,
       children: [
         SizedBox(
-          height: _currentHeight,
+          height: _currentHeight + widget.addedHeight,
           child: WebViewWidget(controller: _controller!.webViewController),
         ),
         widget.loadingWidgetBuilder?.call(context) ?? const SizedBox.shrink(),
