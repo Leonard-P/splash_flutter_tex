@@ -181,9 +181,6 @@ class TeXRenderingController {
       try {
         if (_sharedServer != null && _isServerRunning) {
           await _sharedServer!.close();
-          _isServerRunning = false;
-          _serverStartCompleter = Completer<void>();
-          _sharedServer = null;
         }
       } catch (e) {
         if (kDebugMode) {
@@ -191,6 +188,9 @@ class TeXRenderingController {
         }
       }
       _instanceCount = 0;
+      _isServerRunning = false;
+      _serverStartCompleter = Completer<void>();
+      _sharedServer = null;
     }
   }
 
