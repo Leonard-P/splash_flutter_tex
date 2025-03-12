@@ -183,6 +183,7 @@ class TeXRenderingController {
           await _sharedServer!.close();
           _isServerRunning = false;
           _serverStartCompleter = Completer<void>();
+          _sharedServer = null;
         }
       } catch (e) {
         if (kDebugMode) {
