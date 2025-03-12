@@ -22,3 +22,5 @@ export 'package:flutter_tex/src/widgets/video.dart';
 export 'package:flutter_tex/src/widgets/widget.dart';
 export 'package:flutter_tex/src/widgets/details.dart';
 export 'package:flutter_tex/src/utils/tex_rendering_server.dart';
+export 'package:flutter_tex/src/utils/tex_rendering_controller.dart';
+export 'package:flutter_tex/src/views/independent_tex_view.dart';

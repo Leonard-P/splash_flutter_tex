@@ -1,12 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tex/flutter_tex.dart';
-import 'package:flutter_tex_example/tex_view_document_example.dart';
-import 'package:flutter_tex_example/tex_view_fonts_example.dart';
-import 'package:flutter_tex_example/tex_view_image_video_example.dart';
-import 'package:flutter_tex_example/tex_view_ink_well_example.dart';
-import 'package:flutter_tex_example/tex_view_markdown_example.dart';
-import 'package:flutter_tex_example/tex_view_quiz_example.dart';
 
 main() async {
   TeXRederingServer.renderingEngine = const TeXViewRenderingEngine.mathjax();
@@ -39,104 +33,83 @@ class TeXViewFullExample extends StatefulWidget {
 }
 
 class _TeXViewFullExampleState extends State<TeXViewFullExample> {
-  int radVal = 0;
+  final PageController _pageController = PageController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Flutter TeX (Demo)"),
-      ),
-      body: ListView(
-        shrinkWrap: true,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Image.asset(
-              "assets/flutter_tex_banner.png",
-              fit: BoxFit.contain,
-              height: 200,
-            ),
+      appBar: AppBar(title: const Text("Flutter TeX Single Demo")),
+      body: PageView(
+        controller: _pageController,
+        children: [
+          // Keep one regular TeXView as an example
+          buildTeXPage(
+            r"""<p style="color:red;">Physics Formula</p>
+            \(\displaystyle E = mc^2\)""",
+            useIndependent: false,
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<int>(
-                value: 0,
-                groupValue: radVal,
-                onChanged: (val) async {
-                  TeXRederingServer.renderingEngine =
-                      const TeXViewRenderingEngine.mathjax();
-
-                  if (!kIsWeb) {
-                    await TeXRederingServer.initController();
-                  }
-
-                  setState(() {
-                    radVal = val!;
-                  });
-                },
-                title: const Text("MathJax"),
-                subtitle: const Text("RenderingEngine for Fast Rendering"),
-              ),
-              RadioListTile<int>(
-                value: 1,
-                groupValue: radVal,
-                onChanged: (val) async {
-                  TeXRederingServer.renderingEngine =
-                      const TeXViewRenderingEngine.katex();
-                  if (!kIsWeb) {
-                    await TeXRederingServer.initController();
-                  }
-                  setState(() {
-                    radVal = val!;
-                  });
-                },
-                title: const Text("Katex"),
-                subtitle: const Text("RenderingEngine for Quality Rendering"),
-              ),
-            ],
+          // Use IndependentTeXView for all others
+          buildTeXPage(
+            r"""<p style="background:yellow;">Math Derivative</p>
+            \(\displaystyle \frac{d}{dx} x^n = nx^{n-1}\)""",
           ),
-          const Divider(
-            height: 30,
-            color: Colors.transparent,
+          buildTeXPage(
+            r"""<p style="font-style:italic;">Chemistry Equation</p>
+            \(\displaystyle H_2 + O_2 \rightarrow H_2O\)""",
           ),
-          getExampleButton(context, 'Quiz Example', const TeXViewQuizExample()),
-          getExampleButton(
-              context, 'TeX Examples', const TeXViewDocumentExamples()),
-          getExampleButton(
-              context, 'Markdown Examples', const TeXViewMarkdownExamples()),
-          getExampleButton(
-              context, 'Custom Fonts Examples', const TeXViewFontsExamples()),
-          getExampleButton(context, 'Image & Video Example',
-              const TeXViewImageVideoExample()),
-          getExampleButton(
-              context, 'Inkwell Example', const TeXViewInkWellExample()),
+          buildTeXPage(
+            r"""<p style="text-decoration:underline;">Trigonometry</p>
+            \(\displaystyle \sin^2 \theta + \cos^2 \theta = 1\)""",
+          ),
+          buildTeXPage(
+            r"""<p style="color:blue;">Combined Math/Chem</p>
+            \(\displaystyle \frac{Na^+}{Cl^-} + \frac{d}{dx} e^x = e^x\)""",
+            isLastPage: true,
+          ),
         ],
       ),
     );
   }
 
-  getExampleButton(BuildContext context, String title, Widget widget) {
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: ElevatedButton(
-        style: ButtonStyle(
-            elevation: WidgetStateProperty.all(5),
-            backgroundColor: WidgetStateProperty.all(Colors.white)),
-        onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => widget));
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 15, color: Colors.black),
-          ),
+  Widget buildTeXPage(String latex,
+      {bool isLastPage = false, bool useIndependent = true}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: useIndependent
+                  ? IndependentTeXView(
+                      child: TeXViewDocument(latex),
+                    )
+                  : TeXView(
+                      child: TeXViewDocument(latex),
+                    ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!isLastPage) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeIn,
+                  );
+                }
+              },
+              child: Text(isLastPage ? "Done" : "Continue"),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    TeXRederingServer.stop();
+    TeXRenderingController.stop(iReallyWantToStop: true);
+    super.dispose();
   }
 }
