@@ -13,12 +13,16 @@ class IndependentTeXView extends StatefulWidget {
   final Function(double height)? onRenderFinished;
   final Widget Function(BuildContext context)? loadingWidgetBuilder;
 
+  /// Whether the view should expand to fill available space
+  final bool expands;
+
   const IndependentTeXView({
     super.key,
     this.renderingEngine = const TeXViewRenderingEngine.mathjax(),
     required this.child,
     this.onRenderFinished,
     this.loadingWidgetBuilder,
+    this.expands = false,
   });
 
   @override
@@ -77,19 +81,29 @@ class _IndependentTeXViewState extends State<IndependentTeXView> {
     }
 
     _renderTeXView();
+
+    Widget contentWidget;
+    if (widget.expands) {
+      contentWidget = WebViewWidget(
+        controller: _controller.controller,
+      );
+    } else {
+      contentWidget = SizedBox(
+        height: _currentHeight,
+        child: WebViewWidget(
+          controller: _controller.controller,
+        ),
+      );
+    }
+
     return IndexedStack(
       index: widget.loadingWidgetBuilder?.call(context) != null
-          ? _currentHeight == initialHeight
+          ? _currentHeight == initialHeight && !widget.expands
               ? 1
               : 0
           : 0,
       children: <Widget>[
-        SizedBox(
-          height: _currentHeight,
-          child: WebViewWidget(
-            controller: _controller.controller,
-          ),
-        ),
+        contentWidget,
         widget.loadingWidgetBuilder?.call(context) ?? const SizedBox.shrink()
       ],
     );

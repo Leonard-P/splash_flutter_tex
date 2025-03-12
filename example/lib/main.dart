@@ -80,15 +80,18 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: useIndependent
-                  ? IndependentTeXView(
+            useIndependent
+                ? Flexible(
+                    child: IndependentTeXView(
                       child: TeXViewDocument(latex),
-                    )
-                  : TeXView(
-                      child: TeXViewDocument(latex),
+                      // Make the last page example use expands=true
+                      expands: isLastPage,
                     ),
-            ),
+                  )
+                : TeXView(
+                    child: TeXViewDocument(latex),
+                  ),
+            Text("Texview ends here"),
             ElevatedButton(
               onPressed: () {
                 if (!isLastPage) {

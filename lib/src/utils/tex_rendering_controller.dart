@@ -13,8 +13,7 @@ class TeXRenderingController {
       onTapCallback,
       onTeXViewRenderedCallback;
   WebViewControllerPlus controller = WebViewControllerPlus();
-  TeXViewRenderingEngine renderingEngine =
-      const TeXViewRenderingEngine.mathjax();
+  TeXViewRenderingEngine renderingEngine = const TeXViewRenderingEngine.katex();
 
   /// set this static flag to true to automatically close and start server depending on instance count
   /// page view usecase might autostop to early and is easier managed manually by calling dispose.
