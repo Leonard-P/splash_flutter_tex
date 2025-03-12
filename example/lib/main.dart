@@ -396,6 +396,199 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
     </script>
   ''';
 
+  // Custom head content for large image page
+  final String largeImageHeadContent = '''
+    <style>
+      .image-container {
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      
+      .responsive-image {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      
+      .image-caption {
+        margin-top: 10px;
+        font-style: italic;
+        text-align: center;
+        color: #555;
+      }
+      
+      .image-credit {
+        margin-top: 5px;
+        font-size: 0.8em;
+        text-align: right;
+        color: #777;
+      }
+      
+      h2 {
+        text-align: center;
+        color: #333;
+      }
+    </style>
+  ''';
+
+  // Custom head content for jazz scales with VexFlow
+  final String jazzScalesHeadContent = '''
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <style>
+      .scale-container {
+        margin: 20px 0;
+      }
+      
+      .scale-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      
+      .scale-description {
+        margin-bottom: 15px;
+        color: #555;
+      }
+      
+      h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      
+      p {
+        line-height: 1.5;
+      }
+      
+      .vf-canvas {
+        width: 100%;
+        overflow: auto;
+      }
+    </style>
+    
+    <script>
+      function renderJazzScales() {
+        try {
+          console.log("Starting to render jazz scales");
+          if (!window.Vex || !window.Vex.Flow) {
+            console.error("VexFlow not loaded properly");
+            return;
+          }
+          
+          renderMajorScale();
+          renderDorian();
+          renderMixolydian();
+          renderBebop();
+          
+          console.log("Jazz scales rendering complete");
+        } catch (e) {
+          console.error("Error rendering jazz scales:", e);
+        }
+      }
+      
+      function renderMajorScale() {
+        try {
+          const container = document.getElementById('major-scale');
+          container.innerHTML = '';
+          
+          const { Factory } = Vex.Flow;
+          const vf = new Factory({ renderer: { elementId: 'major-scale' } });
+          const score = vf.EasyScore();
+          const system = vf.System();
+          
+          system.addStave({
+            voices: [
+              score.voice(score.notes('C4/q, D4, E4, F4', { stem: 'up' }))
+            ]
+          }).addClef('treble');
+          
+          vf.draw();
+        } catch (e) {
+          console.error("Error rendering major scale:", e);
+        }
+      }
+      
+      function renderDorian() {
+        try {
+          const container = document.getElementById('dorian-scale');
+          container.innerHTML = '';
+          
+          const { Factory } = Vex.Flow;
+          const vf = new Factory({ renderer: { elementId: 'dorian-scale' } });
+          const score = vf.EasyScore();
+          const system = vf.System();
+          
+          system.addStave({
+            voices: [
+              score.voice(score.notes('D4/q, E4, F4, G4', { stem: 'up' }))
+            ]
+          }).addClef('treble').addTimeSignature('4/4');
+          
+          vf.draw();
+        } catch (e) {
+          console.error("Error rendering dorian scale:", e);
+        }
+      }
+      
+      function renderMixolydian() {
+        try {
+          const container = document.getElementById('mixolydian-scale');
+          container.innerHTML = '';
+          
+          const { Factory } = Vex.Flow;
+          const vf = new Factory({ renderer: { elementId: 'mixolydian-scale' } });
+          const score = vf.EasyScore();
+          const system = vf.System();
+          
+          system.addStave({
+            voices: [
+              score.voice(score.notes('G4/q, A4, B4, C5', { stem: 'up' }))
+            ]
+          }).addClef('treble').addTimeSignature('4/4');
+          
+          vf.draw();
+        } catch (e) {
+          console.error("Error rendering mixolydian scale:", e);
+        }
+      }
+      
+      function renderBebop() {
+        try {
+          const container = document.getElementById('bebop-scale');
+          container.innerHTML = '';
+          
+          const { Factory } = Vex.Flow;
+          const vf = new Factory({ renderer: { elementId: 'bebop-scale' } });
+          const score = vf.EasyScore();
+          const system = vf.System();
+          
+          system.addStave({
+            voices: [
+              score.voice(score.notes('C4/q, D4, E4, F4', { stem: 'up' }))
+            ]
+          }).addClef('treble').addTimeSignature('4/4');
+          
+          vf.draw();
+        } catch (e) {
+          console.error("Error rendering bebop scale:", e);
+        }
+      }
+      
+      // Initialize when document is ready
+      window.addEventListener('load', function() {
+        setTimeout(renderJazzScales, 1000);
+      });
+      
+      document.addEventListener('customContentLoaded', function() {
+        setTimeout(renderJazzScales, 500);
+      });
+      
+      // Backup initialization
+      setTimeout(renderJazzScales, 2000);
+    </script>
+  ''';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -405,13 +598,69 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
         controller: _pageController,
         physics: NeverScrollableScrollPhysics(),
         children: [
-          // Add the interactive lever physics demo as the first page
+          // Add new pages at the beginning
+
+          // Large image page
+          buildTeXPage(
+            r"""<div>
+              <h2>Responsive Large Image Test</h2>
+              <div class="image-container">
+                <img src="https://live.staticflickr.com/65535/51597064025_2fe4827d06_6k.jpg" 
+                     class="responsive-image" 
+                     alt="Blåtimen over Sykkylven"/>
+                <div class="image-caption">Blåtimen over Sykkylven (Blue Hour over Sykkylven)</div>
+                <div class="image-credit">Photo by: Arild Solberg</div>
+              </div>
+              <p>This page tests how well the height adjustment works with large images.</p>
+            </div>""",
+            customHead: largeImageHeadContent,
+            expands: false,
+          ),
+
+          // Jazz scales page
+          buildTeXPage(
+            r"""<div>
+              <h2>Understanding Jazz Scales</h2>
+              
+              <p>Jazz music relies on several key scales that give it its distinctive sound. Here are some of the most important ones:</p>
+              
+              <div class="scale-container">
+                <div class="scale-title">Major Scale</div>
+                <div class="scale-description">The foundation of Western music. Formula: W-W-H-W-W-W-H (W=whole step, H=half step)</div>
+                <div id="major-scale" class="vf-canvas"></div>
+              </div>
+              
+              <div class="scale-container">
+                <div class="scale-title">Dorian Mode</div>
+                <div class="scale-description">Used extensively in jazz and modal music. Formula: W-H-W-W-W-H-W</div>
+                <div id="dorian-scale" class="vf-canvas"></div>
+              </div>
+              
+              <div class="scale-container">
+                <div class="scale-title">Mixolydian Mode</div>
+                <div class="scale-description">Often used over dominant 7th chords. Formula: W-W-H-W-W-H-W</div>
+                <div id="mixolydian-scale" class="vf-canvas"></div>
+              </div>
+              
+              <div class="scale-container">
+                <div class="scale-title">Bebop Dominant Scale</div>
+                <div class="scale-description">Adds a passing tone to create a smooth 8-note scale. Formula: W-W-H-W-W-H-H-W</div>
+                <div id="bebop-scale" class="vf-canvas"></div>
+              </div>
+              
+              <p>These scales form the building blocks of jazz improvisation and harmony.</p>
+            </div>""",
+            customHead: jazzScalesHeadContent,
+            expands: false,
+          ),
+
+          // Lever physics demo (existing)
           buildTeXPage(
             r"""<div id="physics-demo">
               <div id="physics-demo-container"></div>
             </div>""",
             customHead: leverDemoHeadContent,
-            expands: true, // This needs to be full height
+            expands: true,
           ),
 
           // Keep previous pages
@@ -468,16 +717,28 @@ class _TeXViewFullExampleState extends State<TeXViewFullExample> {
                     child: TeXViewDocument(latex),
                   ),
             Text("Texview ends here"),
-            ElevatedButton(
-              onPressed: () {
-                if (!isLastPage) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeIn,
-                  );
-                }
-              },
-              child: Text(isLastPage ? "Done" : "Continue"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeIn,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                IconButton(
+                  onPressed: () {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeIn,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward),
+                ),
+              ],
             ),
           ],
         ),
