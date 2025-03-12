@@ -16,6 +16,9 @@ class IndependentTeXView extends StatefulWidget {
   /// Whether the view should expand to fill available space
   final bool expands;
 
+  /// Custom content to inject into the HTML document's head section
+  final String customHeadContent;
+
   const IndependentTeXView({
     super.key,
     this.renderingEngine = const TeXViewRenderingEngine.mathjax(),
@@ -23,6 +26,7 @@ class IndependentTeXView extends StatefulWidget {
     this.onRenderFinished,
     this.loadingWidgetBuilder,
     this.expands = false,
+    this.customHeadContent = '',
   });
 
   @override
@@ -42,7 +46,8 @@ class _IndependentTeXViewState extends State<IndependentTeXView> {
   }
 
   Future<void> _setupController() async {
-    _controller = TeXRenderingController();
+    _controller =
+        TeXRenderingController(customHeadContent: widget.customHeadContent);
     _controller.renderingEngine = widget.renderingEngine;
 
     _controller.onTeXViewRenderedCallback = (teXViewRenderedCallbackMessage) {
